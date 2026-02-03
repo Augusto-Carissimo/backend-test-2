@@ -8,11 +8,11 @@
 > **Tests without AI usage will not be evaluated.**
 > Use Claude Code, Copilot, or similar. This test is designed to showcase your AI-assisted development skills. Impress us.
 
-| | |
-|---|---|
-| **Duration** | 45 minutes maximum |
-| **Deliverables** | Git repository with all tests passing |
-| | Session recording (include in repo or send via email) |
+**Duration:** 45 minutes maximum
+
+**Deliverables:**
+- Git repository with all tests passing
+- Session recording (in repo or via email)
 
 ---
 
