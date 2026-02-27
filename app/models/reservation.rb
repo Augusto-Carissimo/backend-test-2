@@ -13,6 +13,56 @@ class Reservation < ApplicationRecord
   validate :reservation_limit
   validate :no_overlapping_reservations
 
+  def self.create_with_recurrences(params, user)
+    occurrences = generate_occurrences(params)
+
+    if occurrences.empty?
+      reservation = new(params.merge(user: user))
+      reservation.valid?
+      return reservation
+    end
+
+    reservations = occurrences.map do |occurrence_params|
+      new(occurrence_params.merge(user: user))
+    end
+
+    all_valid = reservations.all?(&:valid?)
+
+    unless all_valid
+      return reservations.find { |r| r.errors.any? }
+    end
+
+    transaction do
+      reservations.each(&:save!)
+    end
+
+    reservations
+  end
+
+  private
+
+  def self.generate_occurrences(params)
+    starts_at       = params[:starts_at].is_a?(String) ? Time.zone.parse(params[:starts_at]) : params[:starts_at]
+    ends_at         = params[:ends_at].is_a?(String) ? Time.zone.parse(params[:ends_at]) : params[:ends_at]
+    recurring_until = params[:recurring_until].is_a?(String) ? Date.parse(params[:recurring_until]) : params[:recurring_until]
+    duration        = ends_at - starts_at
+    current         = starts_at
+
+    step = case params[:recurring]
+           when "daily"  then 1.day
+           when "weekly" then 1.week
+           end
+
+    [].tap do |occurrences|
+      while current.to_date <= recurring_until
+        if current.on_weekday?
+          occurrences << params.merge(starts_at: current, ends_at: current + duration)
+        end
+        current += step
+      end
+    end
+  end
+
   private
 
   def recurring_until_not_present_without_recurring
