@@ -12,6 +12,18 @@ class ReservationsController < ApplicationController
     end
   end
 
+  def cancel
+    reservation = Reservation.find(params[:id])
+    use_case = CancelReservationUseCase.new(reservation)
+    result = use_case.call
+
+    if result[:success]
+      render json: { reservation: reservation_json(result[:reservation]) }, status: :ok
+    else
+      render json: { error: result[:error] }, status: :unprocessable_entity
+    end
+  end
+
   private
 
   def reservation_params

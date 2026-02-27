@@ -1,6 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe "Reservations API", type: :request do
+  include ActiveSupport::Testing::TimeHelpers
   let(:user) { create(:user) }
   let(:room) { create(:room) }
   
@@ -242,6 +243,46 @@ RSpec.describe "Reservations API", type: :request do
           expect(reservations[2].starts_at.to_date).to eq((starts_at + 2.weeks).to_date)
           expect(reservations[3].starts_at.to_date).to eq((starts_at + 3.weeks).to_date)
           expect(reservations[4].starts_at.to_date).to eq((starts_at + 4.weeks).to_date)
+        end
+      end
+    end
+  end
+
+  describe "PATCH /reservations/:id/cancel" do
+    context "when cancellation is valid (more than 60 minutes before start time)" do
+      it "cancels the reservation" do
+        starts_at = Time.zone.now.next_occurring(:monday).change(hour: 14, min: 0)
+        ends_at = starts_at + 1.hour
+        reservation = create(:reservation, user: user, room: room, starts_at: starts_at, ends_at: ends_at)
+
+        patch "/reservations/#{reservation.id}/cancel"
+
+        expect(response).to have_http_status(:ok)
+        json = JSON.parse(response.body)
+        expect(json["reservation"]["cancelled_at"]).not_to be_nil
+        
+        reservation.reload
+        expect(reservation.cancelled_at).not_to be_nil
+      end
+    end
+
+    context "when cancellation is invalid (less than 60 minutes before start time)" do
+      it "does not cancel the reservation and returns an error" do
+        base_time = Time.zone.now.next_occurring(:monday).change(hour: 14, min: 0)
+        starts_at = base_time + 30.minutes
+        ends_at = starts_at + 1.hour
+        
+        reservation = create(:reservation, user: user, room: room, starts_at: starts_at, ends_at: ends_at)
+
+        travel_to(base_time) do
+          patch "/reservations/#{reservation.id}/cancel"
+
+          expect(response).to have_http_status(:unprocessable_entity)
+          json = JSON.parse(response.body)
+          expect(json["error"]).to eq("A reservation can only be cancelled if there are more than 60 minutes until its start time.")
+          
+          reservation.reload
+          expect(reservation.cancelled_at).to be_nil
         end
       end
     end
