@@ -1,4 +1,14 @@
 class ReservationsController < ApplicationController
+  def index
+    reservations = Reservation.all
+    render json: { reservations: reservations.map { |r| reservation_json(r) } }, status: :ok
+  end
+
+  def show
+    reservation = Reservation.find(params[:id])
+    render json: { reservation: reservation_json(reservation) }, status: :ok
+  end
+
   def create
     use_case = CreateReservationUseCase.new(reservation_params, current_user)
     result = use_case.call

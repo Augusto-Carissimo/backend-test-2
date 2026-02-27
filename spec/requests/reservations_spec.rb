@@ -2,6 +2,7 @@ require 'rails_helper'
 
 RSpec.describe "Reservations API", type: :request do
   include ActiveSupport::Testing::TimeHelpers
+  
   let(:user) { create(:user) }
   let(:room) { create(:room) }
   
@@ -13,7 +14,7 @@ RSpec.describe "Reservations API", type: :request do
           ends_at = starts_at + 1.hour
 
           expect {
-            post "/reservations", params: {
+            post "/api/v1/reservations", params: {
               user_id: user.id,
               reservation: {
                 room_id: room.id,
@@ -42,7 +43,7 @@ RSpec.describe "Reservations API", type: :request do
           recurring_until = (starts_at + 2.weeks).to_date
 
           expect {
-            post "/reservations", params: {
+            post "/api/v1/reservations", params: {
               user_id: user.id,
               reservation: {
                 room_id: room.id,
@@ -69,7 +70,7 @@ RSpec.describe "Reservations API", type: :request do
           recurring_until = starts_at.to_date
 
           expect {
-            post "/reservations", params: {
+            post "/api/v1/reservations", params: {
               user_id: user.id,
               reservation: {
                 room_id: room.id,
@@ -103,7 +104,7 @@ RSpec.describe "Reservations API", type: :request do
           recurring_until = (starts_at + 2.weeks).to_date
 
           expect {
-            post "/reservations", params: {
+            post "/api/v1/reservations", params: {
               user_id: user.id,
               reservation: {
                 room_id: room.id,
@@ -129,7 +130,7 @@ RSpec.describe "Reservations API", type: :request do
           recurring_until = (starts_at + 2.weeks).to_date
 
           expect {
-            post "/reservations", params: {
+            post "/api/v1/reservations", params: {
               user_id: user.id,
               reservation: {
                 room_id: room.id,
@@ -156,7 +157,7 @@ RSpec.describe "Reservations API", type: :request do
           recurring_until = (starts_at + 4.days).to_date
 
           expect {
-            post "/reservations", params: {
+            post "/api/v1/reservations", params: {
               user_id: admin_user.id,
               reservation: {
                 room_id: room.id,
@@ -188,7 +189,7 @@ RSpec.describe "Reservations API", type: :request do
           recurring_until = (starts_at + 4.days).to_date
 
           expect {
-            post "/reservations", params: {
+            post "/api/v1/reservations", params: {
               user_id: admin_user.id,
               reservation: {
                 room_id: room.id,
@@ -220,7 +221,7 @@ RSpec.describe "Reservations API", type: :request do
           recurring_until = (starts_at + 4.weeks).to_date
 
           expect {
-            post "/reservations", params: {
+            post "/api/v1/reservations", params: {
               user_id: admin_user.id,
               reservation: {
                 room_id: room.id,
@@ -255,7 +256,7 @@ RSpec.describe "Reservations API", type: :request do
         ends_at = starts_at + 1.hour
         reservation = create(:reservation, user: user, room: room, starts_at: starts_at, ends_at: ends_at)
 
-        patch "/reservations/#{reservation.id}/cancel"
+        patch "/api/v1/reservations/#{reservation.id}/cancel"
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
@@ -274,8 +275,8 @@ RSpec.describe "Reservations API", type: :request do
         
         reservation = create(:reservation, user: user, room: room, starts_at: starts_at, ends_at: ends_at)
 
-        travel_to(base_time) do
-          patch "/reservations/#{reservation.id}/cancel"
+        travel_to(starts_at - 30.minutes) do
+          patch "/api/v1/reservations/#{reservation.id}/cancel"
 
           expect(response).to have_http_status(:unprocessable_entity)
           json = JSON.parse(response.body)
